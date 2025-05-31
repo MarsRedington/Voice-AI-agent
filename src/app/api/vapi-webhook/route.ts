@@ -67,6 +67,11 @@ export async function POST(req: NextRequest) {
   `;
 
   await sendEmail(email, "Your consultation results", html);
+  await fetch("http://localhost:3000/api/ai-summary", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ callId, structuredData }),
+  });
 
   return NextResponse.json({ received: true }, { status: 200 });
 }

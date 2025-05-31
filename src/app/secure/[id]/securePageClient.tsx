@@ -26,6 +26,9 @@ type CallbackData = {
   status: string;
   createdAt: string;
   structuredData?: StructuredData;
+  aiSummary?: string;
+  aiSummaryAt?: string;
+  aiSummaryTranslated?: string;
 };
 
 export default function SecurePageClient({ id }: { id: string }) {
@@ -67,14 +70,34 @@ export default function SecurePageClient({ id }: { id: string }) {
 
   return (
     <div className="max-w-xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-bold">Your Consultation Data</h1>
-      <ul className="space-y-2">
-        {Object.entries(data.structuredData || {}).map(([key, value]) => (
-          <li key={key}>
-            <strong>{key}:</strong> {value as string}
-          </li>
-        ))}
-      </ul>
+      {data.aiSummary && (
+        <div className="p-4 border border-green-400 rounded-md bg-green-50">
+          <h2 className="text-lg font-semibold mb-2">AI Summary (English)</h2>
+          <p>{data.aiSummary}</p>
+        </div>
+      )}
+
+      {data.aiSummaryTranslated && (
+        <div className="p-4 border border-yellow-400 rounded-md bg-yellow-50">
+          <h2 className="text-lg font-semibold mb-2">
+            AI Summary ({data.structuredData?.language})
+          </h2>
+          <p>{data.aiSummaryTranslated}</p>
+        </div>
+      )}
+
+      {!data.aiSummary && data.structuredData && (
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-2">Structured Data</h2>
+          <ul className="space-y-2">
+            {Object.entries(data.structuredData).map(([key, value]) => (
+              <li key={key}>
+                <strong>{key}:</strong> {value}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
