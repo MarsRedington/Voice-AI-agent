@@ -54,20 +54,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    //const fakeCallId = crypto.randomUUID()
     const callId = structuredData.id as string;
-
-await new Promise(resolve => setTimeout(resolve, 1000))
-
-  // const structuredData = {
-  //   consultation_type: "General health",
-  //   category: "Dermatology",
-  //   country: "Canada",
-  //   language: "French",
-  //   urgency: "Not urgent",
-  //   address: "Calgary",
-  //   summary: "Client is seeking a general health consultation related to dermatology. They did not provide specific details.",
-  // }
 
     await db.collection("callbacks").doc(callId).set({
       email,
@@ -80,20 +67,6 @@ await new Promise(resolve => setTimeout(resolve, 1000))
       updatedAt: new Date().toISOString(),
     })
 
-
-    await fetch("http://localhost:3000/api/vapi-webhook", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    message: {
-      type: "end-of-call-report",
-      call: { id: callId },
-      analysis: {
-        structuredData: structuredData,
-      },
-    },
-  }),
-});
 
     return NextResponse.json({ success: true, callId }, { status: 200 });
   } catch (err: unknown) {

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendEmail } from "@/lib/mailer";
 import { db } from "@/lib/firebaseAdmin";
-import * as admin from "firebase-admin";
 
 type VapiWebhookBody = {
   message?: {
@@ -28,50 +26,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
-  const structuredData = body.message?.analysis?.structuredData;
-  const callId = body.message?.call?.id;
+  const structuredData = body.message.analysis?.structuredData;
+  const callId = body.message.call?.id;
 
   if (!callId || !structuredData) {
     console.error("Missing callId or structuredData in webhook");
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
-  const callbackDoc = await db.collection("callbacks").doc(callId).get();
-  const { email } = callbackDoc.data() || {};
-
-  if (!email) {
-    console.error("Email not found in Firestore");
-    return NextResponse.json({ received: true }, { status: 200 });
-  }
-
   await db.collection("callbacks").doc(callId).update({
-    structuredData: structuredData,
+    structuredData,
+    status: "call_completed",
     updatedAt: new Date().toISOString(),
   });
 
-  const actionCodeSettings = {
-    url: `http://localhost:3000/secure/${callId}`,
-    handleCodeInApp: true,
-  };
-
-  const firebase = admin.auth();
-  const link = await firebase.generateSignInWithEmailLink(
-    email,
-    actionCodeSettings
-  );
-
-  const html = `
-    <h2>Thank you for your call</h2>
-    <p>You can view all the data at the following link:</p>
-    <p><a href="${link}">Open my details</a></p>
-  `;
-
-  await sendEmail(email, "Your consultation results", html);
-  await fetch("http://localhost:3000/api/ai-summary", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ callId, structuredData }),
-  });
+  try {
+    await fetch("http://localhost:3000/api/ai-summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ callId, structuredData }),
+    });
+  } catch (e) {
+    console.error("Error calling ai-summary:", e);
+  }
 
   return NextResponse.json({ received: true }, { status: 200 });
 }
